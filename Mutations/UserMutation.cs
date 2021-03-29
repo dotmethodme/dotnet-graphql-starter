@@ -16,16 +16,14 @@ namespace PersonalCrm
             this.userService = userService;
         }
 
-        public User Register(string name, string email, string password)
+        public async Task<User> Register(string name, string email, string password)
         {
-            var user = userService.Create(name, email, password);
-            return user;
+            return await userService.Create(name, email, password);
         }
 
         public async Task<UserTokenResult> Login(string email, string password)
         {
-            var token = await userService.IssueToken(email, password);
-            return token;
+            return await userService.IssueToken(email, password);
         }
 
     }

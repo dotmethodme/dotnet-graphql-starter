@@ -11,7 +11,7 @@ namespace PersonalCrm
 {
     public interface IUserService
     {
-        User Create(string name, string email, string password);
+        Task<User> Create(string name, string email, string password);
         Task<UserTokenResult> IssueToken(string email, string password);
         Task<User> GetByEmail(string email);
         Task<User> GetById(string id);
@@ -37,10 +37,10 @@ namespace PersonalCrm
 
         public async Task<User> GetById(string id)
         {
-            return await col.Find(d => d.Id == id).FirstOrDefaultAsync();
+            return await (await col.FindAsync(d => d.Id == id)).FirstOrDefaultAsync();
         }
 
-        public User Create(string name, string email, string password)
+        public async Task<User> Create(string name, string email, string password)
         {
             var salt = CryptoUtil.GenerateSalt();
             var hash = CryptoUtil.GetSaltedPasswordHash(password, salt);
@@ -51,8 +51,8 @@ namespace PersonalCrm
                 Salt = salt,
                 Hash = hash,
             };
+            await col.InsertOneAsync(user);
 
-            col.InsertOne(user);
             return user;
         }
 
