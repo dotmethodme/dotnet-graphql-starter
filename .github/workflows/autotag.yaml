@@ -1,0 +1,61 @@
+name: Automated tagging
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Bump versions
+        uses: SiqiLu/dotnet-bump-version@master
+        with:
+          version_files: "**/*.csproj"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: version_step
+        run: |
+          VERSION=$(grep -o -P '(?<=<Version>).*(?=<\/Version>)' ./PersonalCrm.csproj)
+          echo "::set-output name=version_number::$VERSION"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version_step.outputs.version_number }}
+          release_name: Release ${{ steps.version_step.outputs.version_number }}
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2.1.0
+        with:
+          key: ${{ secrets.KUBERNETES_SSH_KEY_PRIV }}
+          known_hosts: |
+            github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDQASvUV2IoHovKIj5Gxmn/HrIsWAJNq8+xcFUKzV+RFsm2qqAbVx3ggSzqLRMf7nDtOqdssEaSXqlLJpn+K/Yn09Ga4XOPlgyMwNfN3kC2tvSprW+xaDvy+s+URCos2tAz4gn96DF4umaWiMY9Up+QZkAflF5+sxOqUkUOsNnyrqaFdhvft2OnAsI7JNymr56CGxgDVi0ehCvFcbK32fn5xp9Qkl6srCUi8pa6YKHTEG1vfTN9qjyyrgbDyhUv3TJZz95GlqFeIZaT+efz/dwX+p2R1CQEyQc2nQUDJUFHVB+LvG8RN8HxRpK8epx3WaeBOm7TAagk8aK5f3yTuljCBkKb5jFPAuwlEe3AxB2XW/Bng3dsWJRdSPDdDrfg0d5Cuc8EELh/gFau8z78eyuoXOYl/yn1lH4BTa1Z0iZsHKTCiDUDuLG7ts4k050W4xW9muugDsb5GcimpNzz0vx/zTIxQUvogZ5zdWRTpDiQs/snhP5IRlhMKdXoLwVR8hgGmCJEvTFWusXBLMx+gUNS56zfnbHEc7pE9xdzCSIs8Zt7nEDDZ+cp0zK1wMOI0glMACFBubXjh6QvTF704lVK8zytNlVJcW3mVqZ+ktqgysGXXg9G3dkKQrny/3Yo3G9vPAte5AojuhYgqda2G0xOxr1yUIJe1vJFMDoXfyzccw== minu@crimetech.dk
+
+      - name: Update Kubernetes
+        run: |
+          # VARIABLES
+          TAG="${{ steps.version_step.outputs.version_number }}"
+          URL="git@github.com:crimetechnology/kubernetes.git"
+
+          # SETUP
+          git config --global user.email "robot@crimetech.dk"
+          git config --global user.name "Robot"
+          git clone $URL
+          cd kubernetes
+
+          # CHANGES
+          sed -i "s/release-.*$/release-$TAG/" ./dev/PersonalCrms/deployment.yaml
+          sed -i "s/release-.*$/release-$TAG/" ./prod/PersonalCrms/deployment.yaml
+
+          # PUSH
+          git remote set-url origin $URL
+          git add .
+          git commit -m "Release service version $TAG"
+          git push
