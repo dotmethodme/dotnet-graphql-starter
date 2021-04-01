@@ -1,9 +1,11 @@
+using HotChocolate.Types;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
 namespace PersonalCrm
 {
+    [ExtendObjectType(Name = "Mutation")]
     public class UserMutation
     {
 

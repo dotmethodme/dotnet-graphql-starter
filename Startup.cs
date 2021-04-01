@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 
+
 namespace PersonalCrm
 {
     public class Startup
@@ -41,6 +42,7 @@ namespace PersonalCrm
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IDatabase, Database>();
             services.AddSingleton<IUserService, UserService>();
+            services.AddSingleton<IReminderService, ReminderService>();
 
             // Authorization
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -59,8 +61,14 @@ namespace PersonalCrm
 
             services
                 .AddGraphQLServer()
-                .AddQueryType<UserQuery>()
-                .AddMutationType<UserMutation>()
+                .AddQueryType(q => q.Name("Query"))
+                .AddType<UserQuery>()
+                .AddType<ReminderQuery>()
+
+                .AddMutationType(q => q.Name("Mutation"))
+                .AddType<UserMutation>()
+                .AddType<ReminderMutation>()
+
                 .AddAuthorization();
 
         }

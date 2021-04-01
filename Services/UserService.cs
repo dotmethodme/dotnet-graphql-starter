@@ -50,6 +50,7 @@ namespace PersonalCrm
                 Salt = salt,
                 Hash = hash,
             };
+
             await col.InsertOneAsync(user);
 
             return user;

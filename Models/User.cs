@@ -6,6 +6,7 @@ namespace PersonalCrm
 {
     public class User
     {
+
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; init; }
@@ -23,5 +24,6 @@ namespace PersonalCrm
 
         [HotChocolate.GraphQLIgnore]
         public string Hash { get; init; }
+
     }
 }
